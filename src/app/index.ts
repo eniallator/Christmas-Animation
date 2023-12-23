@@ -91,6 +91,7 @@ interface Branch {
 interface State {
   lastFrame: number;
   tree: {
+    createdAt: number;
     decorations: Decoration[];
     growthPercent: number;
     branches: Branch[];
@@ -111,11 +112,11 @@ function growTree(
   const decorationSpawnInterval = 1000;
   if (tree.newBranches != null) {
     const makeNewDecoration =
-      (tree.decorations.length === 0 ||
-        tree.decorations[tree.decorations.length - 1].createdAt +
-          decorationSpawnInterval <
-          Date.now()) &&
-      Math.random() < 0.05;
+      (tree.decorations.length === 0
+        ? tree.createdAt
+        : tree.decorations[tree.decorations.length - 1].createdAt) +
+        decorationSpawnInterval <
+        Date.now() && Math.random() < 0.05;
     const decorationBranch = randomChoice(...tree.newBranches);
     const decorations = makeNewDecoration
       ? [
@@ -349,6 +350,7 @@ export default appMethods.stateful({
     return {
       lastFrame: Date.now(),
       tree: {
+        createdAt: Date.now(),
         growthPercent: 0,
         decorations: [] as Decoration[],
         branches: [] as Branch[],
