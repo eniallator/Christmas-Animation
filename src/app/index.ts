@@ -355,7 +355,10 @@ export default appMethods.stateful({
         decorations: [] as Decoration[],
         branches: [] as Branch[],
         newBranches: [
-          createBranch(root, root.copy().add(Vector.UP.multiply(1 / 3))),
+          createBranch(
+            root,
+            root.copy().add(Vector.UP.multiply(1 / 4 + (Math.random() * 1) / 4))
+          ),
         ] as Branch[],
         newGrowthPercent: 0,
       },
