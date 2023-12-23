@@ -1,6 +1,6 @@
-# Web-Animation-Template
+# Christmas Animation
 
-My template repository for creating web animations
+An animation of a christmas tree growing
 
 ## Installation
 
