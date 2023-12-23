@@ -211,7 +211,11 @@ function drawDecorations(
   const now = Date.now();
   for (const { node, position, createdAt } of decorations) {
     const decorationSize =
-      (20 * Math.min(growTime, now - createdAt)) / growTime;
+      Math.max(
+        10,
+        ((dimensions.x() + dimensions.y()) / 120) *
+          Math.min(growTime, now - createdAt)
+      ) / growTime;
     const drawPos = position
       .copy()
       .multiply(dimensions)
