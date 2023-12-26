@@ -88,24 +88,49 @@ interface Branch {
   end: Vector<2>;
 }
 
+interface Present {
+  createdAt: number;
+  topLeft: Vector<2>;
+  bottomRight: Vector<2>;
+  backgroundColour: string;
+  stripesColour: string;
+}
+
 interface State {
   lastFrame: number;
+  animationStart: number;
   tree: {
-    createdAt: number;
     decorations: Decoration[];
     growthPercent: number;
     branches: Branch[];
     newBranches?: Branch[];
     newGrowthPercent: number;
   };
+  presents: Present[];
 }
 
 function createBranch(start: Vector<2>, end: Vector<2>): Branch {
   return { start, end };
 }
 
+function createPresent(
+  topLeft: Vector<2>,
+  bottomRight: Vector<2>,
+  backgroundColour: string,
+  stripesColour: string
+): Present {
+  return {
+    createdAt: Date.now(),
+    topLeft,
+    bottomRight,
+    backgroundColour,
+    stripesColour,
+  };
+}
+
 function growTree(
   tree: State["tree"],
+  animationStart: number,
   dt: number,
   palette: string[]
 ): State["tree"] {
@@ -113,7 +138,7 @@ function growTree(
   if (tree.newBranches != null) {
     const makeNewDecoration =
       (tree.decorations.length === 0
-        ? tree.createdAt
+        ? animationStart
         : tree.decorations[tree.decorations.length - 1].createdAt) +
         decorationSpawnInterval <
         Date.now() && Math.random() < 0.05;
@@ -313,6 +338,77 @@ function drawDecorations(
   }
 }
 
+function drawPresents(
+  dimensions: Vector<2>,
+  ctx: CanvasRenderingContext2D,
+  presents: Present[]
+): void {
+  presents.forEach((present) => {
+    ctx.fillStyle = "#" + present.backgroundColour;
+    const drawPos = present.topLeft.copy().multiply(dimensions);
+    const drawDim = present.bottomRight
+      .copy()
+      .multiply(dimensions)
+      .sub(drawPos);
+    ctx.fillRect(drawPos.x(), drawPos.y(), drawDim.x(), drawDim.y());
+    ctx.fillStyle = "#" + present.stripesColour;
+    ctx.fillRect(
+      drawPos.x() + drawDim.x() * 0.4,
+      drawPos.y(),
+      drawDim.x() * 0.2,
+      drawDim.y()
+    );
+    ctx.fillRect(
+      drawPos.x(),
+      drawPos.y() + drawDim.y() * 0.4,
+      drawDim.x(),
+      drawDim.y() * 0.2
+    );
+
+    ctx.beginPath();
+    ctx.moveTo(drawPos.x() + drawDim.x() * 0.42, drawPos.y());
+    ctx.arc(
+      drawPos.x() + drawDim.x() * 0.42,
+      drawPos.y() - drawDim.x() * 0.09,
+      drawDim.x() * 0.09,
+      Math.PI / 2,
+      (-Math.PI * 3) / 2
+    );
+    ctx.lineTo(drawPos.x() + drawDim.x() * 0.38, drawPos.y());
+    ctx.arc(
+      drawPos.x() + drawDim.x() * 0.38,
+      drawPos.y() - drawDim.x() * 0.09,
+      drawDim.x() * 0.09,
+      (-Math.PI * 3) / 2,
+      Math.PI / 2,
+      true
+    );
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(drawPos.x() + drawDim.x() * 0.58, drawPos.y());
+    ctx.arc(
+      drawPos.x() + drawDim.x() * 0.58,
+      drawPos.y() - drawDim.x() * 0.09,
+      drawDim.x() * 0.09,
+      Math.PI / 2,
+      (-Math.PI * 3) / 2
+    );
+    ctx.lineTo(drawPos.x() + drawDim.x() * 0.62, drawPos.y());
+    ctx.arc(
+      drawPos.x() + drawDim.x() * 0.62,
+      drawPos.y() - drawDim.x() * 0.09,
+      drawDim.x() * 0.09,
+      (-Math.PI * 3) / 2,
+      Math.PI / 2,
+      true
+    );
+    ctx.fill();
+  });
+}
+
+const presentSpawnInterval = 6000;
+
 function animationFrame({
   paramConfig,
   ctx,
@@ -325,18 +421,36 @@ function animationFrame({
 
   const now = Date.now();
   const dt = (now - state.lastFrame) / 1000;
+  const palette = paramConfig.getVal("palette").flatMap((a) => a);
   newState.lastFrame = now;
 
   if (state.tree.growthPercent < 1 || state.tree.newBranches != null) {
-    newState.tree = growTree(
-      state.tree,
-      dt,
-      paramConfig.getVal("palette").flatMap((a) => a)
-    );
+    newState.tree = growTree(state.tree, state.animationStart, dt, palette);
+
+    const spawnPresent =
+      (newState.presents.length > 0
+        ? newState.presents[newState.presents.length - 1].createdAt
+        : newState.animationStart - presentSpawnInterval / 2) +
+        presentSpawnInterval <
+        now && Math.random() < 0.05;
+
+    if (spawnPresent) {
+      const startX = Math.random() * 0.8;
+      const backgroundColour = randomChoice(...palette);
+      newState.presents.push(
+        createPresent(
+          Vector.create(startX, 0.8 + 0.1 * Math.random()),
+          Vector.create(startX + 0.1 + Math.random() * 0.1, 1),
+          backgroundColour,
+          randomChoice(...palette.filter((c) => c !== backgroundColour))
+        )
+      );
+    }
   }
 
   const dimensions = Vector.create(canvas.width, canvas.height);
 
+  drawPresents(dimensions, ctx, newState.presents);
   drawBranches(
     dimensions,
     ctx,
@@ -348,24 +462,25 @@ function animationFrame({
   return newState;
 }
 
-export default appMethods.stateful({
-  init: ({ canvas }) => {
+export default appMethods.stateful<typeof config, State>({
+  init: () => {
     const root = Vector.create(0.5, 1);
     return {
       lastFrame: Date.now(),
+      animationStart: Date.now(),
       tree: {
-        createdAt: Date.now(),
         growthPercent: 0,
-        decorations: [] as Decoration[],
-        branches: [] as Branch[],
+        decorations: [],
+        branches: [],
         newBranches: [
           createBranch(
             root,
             root.copy().add(Vector.UP.multiply(1 / 4 + (Math.random() * 1) / 4))
           ),
-        ] as Branch[],
+        ],
         newGrowthPercent: 0,
       },
+      presents: [],
     };
   },
   animationFrame,
