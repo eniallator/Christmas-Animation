@@ -343,12 +343,17 @@ function drawPresents(
   ctx: CanvasRenderingContext2D,
   presents: Present[]
 ): void {
+  const now = Date.now();
   presents.forEach((present) => {
+    const progress = dimensions.y() - ((now - present.createdAt) / 20) ** 1.5;
+    const yOffset =
+      progress > 0 ? Vector.UP.multiply(progress) : Vector.ZERO(2);
     ctx.fillStyle = "#" + present.backgroundColour;
-    const drawPos = present.topLeft.copy().multiply(dimensions);
+    const drawPos = present.topLeft.copy().multiply(dimensions).add(yOffset);
     const drawDim = present.bottomRight
       .copy()
       .multiply(dimensions)
+      .add(yOffset)
       .sub(drawPos);
     ctx.fillRect(drawPos.x(), drawPos.y(), drawDim.x(), drawDim.y());
     ctx.fillStyle = "#" + present.stripesColour;
