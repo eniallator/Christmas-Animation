@@ -67,9 +67,7 @@ function createDecorationNode(palette: string[]): Decoration["node"] {
         dotPositions: new Array(Math.floor(10 + Math.random() * 4))
           .fill(undefined)
           .map(() =>
-            Vector.create(Math.random() * 2 - 1, Math.random() * 2 - 1)
-              .normalise()
-              .multiply(1 - Math.random() ** 2)
+            Vector.randomPointOnUnitCircle(2).multiply(1 - Math.random() ** 2)
           ),
       };
     }
@@ -183,12 +181,9 @@ function growTree(
             .copy()
             .multiply(1 - Math.random() ** 2)
             .add(baseBranch.start);
-          const newBranchDiff = Vector.create(
-            Math.random() * 2 - 1,
-            Math.random() * 2 - 1
-          )
-            .normalise()
-            .multiply(0.1 + Math.random() * 0.1);
+          const newBranchDiff = Vector.randomPointOnUnitCircle(2).multiply(
+            0.1 + Math.random() * 0.1
+          );
           if (newBranchDiff.dot(baseBranchDiff) < 0) {
             newBranchDiff.multiply(-1);
           }
