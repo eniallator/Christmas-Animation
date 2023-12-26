@@ -58,17 +58,24 @@ function createDecorationNode(palette: string[]): Decoration["node"] {
       };
     case "DotsBauble": {
       const backgroundColour = randomChoice(...palette);
+      const gridSize = 4;
       return {
         type,
         backgroundColour,
         dotColour: randomChoice(
           ...palette.filter((c) => c !== backgroundColour)
         ),
-        dotPositions: new Array(Math.floor(10 + Math.random() * 4))
+        dotPositions: new Array(gridSize * gridSize)
           .fill(undefined)
-          .map(() =>
-            Vector.randomPointOnUnitCircle(2).multiply(1 - Math.random() ** 2)
-          ),
+          .map((_, i) =>
+            Vector.create(
+              (2 * ((i % gridSize) + 0.25 + Math.random() / 2)) / gridSize - 1,
+              (2 * (Math.floor(i / gridSize) + 0.25 + Math.random() / 2)) /
+                gridSize -
+                1
+            )
+          )
+          .filter((v) => v.getMagnitude() <= 1),
       };
     }
     case "Light": {
