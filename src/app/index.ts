@@ -102,8 +102,6 @@ interface Present {
 }
 
 interface State {
-  lastFrame: number;
-  animationStart: number;
   tree: {
     decorations: Decoration[];
     growthPercent: number;
@@ -421,25 +419,23 @@ function animationFrame({
   ctx,
   canvas,
   state,
+  time: { animationStart, delta },
 }: AppContextWithState<typeof config, State>): State {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   let newState = { ...state };
 
-  const now = Date.now();
-  const dt = (now - state.lastFrame) / 1000;
   const palette = paramConfig.getVal("palette").flatMap((a) => a);
-  newState.lastFrame = now;
 
   if (state.tree.growthPercent < 1 || state.tree.newBranches != null) {
-    newState.tree = growTree(state.tree, state.animationStart, dt, palette);
+    newState.tree = growTree(state.tree, animationStart, delta / 1000, palette);
 
     const spawnPresent =
       (newState.presents.length > 0
         ? newState.presents[newState.presents.length - 1].createdAt
-        : newState.animationStart - presentSpawnInterval / 2) +
+        : animationStart - presentSpawnInterval / 2) +
         presentSpawnInterval <
-        now && Math.random() < 0.05;
+        Date.now() && Math.random() < 0.05;
 
     if (spawnPresent) {
       const startX = Math.random() * 0.8;
@@ -473,8 +469,6 @@ export default appMethods.stateful<typeof config, State>({
   init: () => {
     const root = Vector.create(0.5, 1);
     return {
-      lastFrame: Date.now(),
-      animationStart: Date.now(),
       tree: {
         growthPercent: 0,
         decorations: [],
