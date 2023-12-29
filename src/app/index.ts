@@ -198,6 +198,70 @@ function growTree(
   }
 }
 
+function drawBackground(
+  dimensions: Vector<2>,
+  ctx: CanvasRenderingContext2D
+): void {
+  ctx.fillStyle = "#BCAFA7";
+  ctx.fillRect(0, 0, dimensions.x(), dimensions.y());
+
+  const fireplaceSize = dimensions.y() * 0.3;
+  const fireplaceX = (dimensions.x() * 3) / 4 - fireplaceSize / 2;
+  const fireplaceY = dimensions.y() - fireplaceSize;
+  ctx.fillStyle = "#ECD0CB";
+  ctx.fillRect(fireplaceX, fireplaceY, fireplaceSize, fireplaceSize);
+
+  const mortarSize = fireplaceSize / 30;
+
+  const chimneyWidth = (fireplaceSize - mortarSize) / 2;
+
+  const gradient = ctx.createLinearGradient(
+    (dimensions.x() * 3) / 4 - chimneyWidth / 2,
+    0,
+    (dimensions.x() * 3) / 4 + chimneyWidth / 2,
+    0
+  );
+  gradient.addColorStop(0, "#FFFFFF20");
+  gradient.addColorStop(1, "#00000020");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(
+    (dimensions.x() * 3) / 4 - chimneyWidth / 2,
+    0,
+    chimneyWidth,
+    dimensions.y() - fireplaceSize + 1
+  );
+
+  const brickHeight = (fireplaceSize + mortarSize) / 6 - mortarSize;
+  const brickWidth = (fireplaceSize + mortarSize) / 3 - mortarSize;
+
+  ctx.fillStyle = "#BC4A3C";
+  for (let y = 0; y < 6; y++) {
+    for (let x = 0; x < 3 + (y % 2); x++) {
+      ctx.fillRect(
+        (brickWidth / 2) * Number(y % 2 === 1 && x === 0) +
+          fireplaceX +
+          x * (brickWidth + mortarSize) -
+          (brickWidth / 2) * (y % 2),
+        fireplaceY + y * (brickHeight + mortarSize),
+        y % 2 === 1 && x === 0
+          ? brickWidth / 2
+          : x === 3
+          ? brickWidth / 2 - mortarSize
+          : brickWidth,
+        brickHeight
+      );
+    }
+  }
+
+  ctx.fillStyle = "#000000A0";
+  ctx.fillRect(
+    fireplaceX + fireplaceSize / 6,
+    fireplaceY + fireplaceSize / 6,
+    (fireplaceSize * 4) / 6,
+    (fireplaceSize * 5) / 6
+  );
+}
+
 function drawBranches(
   dimensions: Vector<2>,
   ctx: CanvasRenderingContext2D,
@@ -453,6 +517,7 @@ function animationFrame({
 
   const dimensions = Vector.create(canvas.width, canvas.height);
 
+  drawBackground(dimensions, ctx);
   drawPresents(dimensions, ctx, newState.presents);
   drawBranches(
     dimensions,
